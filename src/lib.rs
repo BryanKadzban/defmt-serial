@@ -100,8 +100,9 @@ pub fn release() {
     unsafe {
         critical_section::with(|_| {
             if TAKEN.load(Ordering::Relaxed) {
-                panic!("defmt logger taken reentrantly"); // I don't think this actually is
-                                                          // possible.
+                //panic!("defmt logger taken reentrantly"); // I don't think this actually is
+                                                            // possible.
+                core::arch::asm!("udf #0", options(noreturn, nomem, nostack, preserves_flags));
             }
 
             ERASEDWRITE = None;
@@ -117,7 +118,8 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
         let restore = unsafe { critical_section::acquire() };
 
         if TAKEN.load(Ordering::Relaxed) {
-            panic!("defmt logger taken reentrantly");
+            //panic!("defmt logger taken reentrantly");
+            unsafe { core::arch::asm!("udf #0", options(noreturn, nomem, nostack, preserves_flags)) };
         }
 
         TAKEN.store(true, Ordering::Relaxed);
